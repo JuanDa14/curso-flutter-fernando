@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:yes_no_app/domain/entities/message.dart';
+import 'package:yes_no_app/presentation/providers/chat_provider.dart';
 import 'package:yes_no_app/presentation/widgets/chat/her_message_bubble.dart';
 import 'package:yes_no_app/presentation/widgets/chat/my_message_bubble.dart';
 import 'package:yes_no_app/presentation/widgets/share/message_field_box.dart';
@@ -28,6 +31,10 @@ class ChatScreen extends StatelessWidget {
 class _ChatView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    //context.watch => Para escuchar los cambios de un provider
+    //se necesita especificar el tipo de provider que se quiere escuchar
+    final chatProvider = context.watch<ChatProvider>();
+
     //SafeArea => Para que no se ponga el contenido debajo de la barra de notificaciones, hace que el contenido no se sobresalga de la pantalla
     return SafeArea(
       child: Padding(
@@ -36,19 +43,29 @@ class _ChatView extends StatelessWidget {
         child: Column(
           children: [
             //Permite expandir el widget a todo el espacio disponible
-            Expanded(child:
-                //builder => Para que solo se renderize lo que se ve en pantalla
-                ListView.builder(
+            Expanded(
+                child:
+                    //builder => Para que solo se renderize lo que se ve en pantalla
+                    ListView.builder(
+                      //controller => Para controlar el scroll de un widget, RESIVE SIEMPRE UN SCROLLCONTROLLER
+                      controller: chatProvider.chatScrollController,
               //ItemCount => Para que se renderize 100 items
-              // itemCount: 100,
+              itemCount: chatProvider.messageList.length,
               itemBuilder: (context, index) {
-                return (index % 2 == 0)
-                    ? const HerMessageBubble()
-                    : const MyMessageBubble();
+                //utilizando el contexto para mostrar el mensaje
+                final message = chatProvider.messageList[index];
+
+                return (message.fromWho == FromWho.hers)
+                    ? HerMessageBubble(message: message,)
+                    : MyMessageBubble(message: message);
               },
             )),
 
-            const MessageFieldBox()
+            MessageFieldBox(
+              onValue: (value) {
+                chatProvider.sendMessage(value);
+              },
+            )
           ],
         ),
       ),
